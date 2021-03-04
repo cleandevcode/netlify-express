@@ -1,22 +1,32 @@
-'use strict';
-const express = require('express');
-const path = require('path');
-const serverless = require('serverless-http');
+const express = require("express");
+const bodyParser = require("body-parser");
+const fetch = require("node-fetch");
+const path = require("path");
+const cors = require("cors");
 const app = express();
-const bodyParser = require('body-parser');
 
-const router = express.Router();
-router.get('/', (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.write('<h1>Hello from Express.js!</h1>');
-  res.end();
-});
-router.get('/another', (req, res) => res.json({ route: req.originalUrl }));
-router.post('/', (req, res) => res.json({ postBody: req.body }));
+const port = 3001;
 
+app.use(
+  bodyParser.urlencoded({
+    extended: false
+  })
+);
+app.use(express.static(__dirname + "/build"));
+app.use(cors());
 app.use(bodyParser.json());
-app.use('/.netlify/functions/server', router);  // path must route to lambda
-app.use('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-module.exports = app;
-module.exports.handler = serverless(app);
+app.get("/api", async (req, res) => {
+  const result = await fetch(
+    "https://www.easybroker.com/feeds/b3JnYW5pemF0aW9uNDQ5MjM/organization_44923.xml"
+  );
+
+  res.send(result);
+});
+
+app.get("/*", function (req, res) {
+  res.sendFile(path.join(__dirname + "/build/index.html"));
+});
+
+app.listen(port, () => console.log(`Express server is running on  :${port}`));
